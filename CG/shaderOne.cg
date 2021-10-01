@@ -1,0 +1,97 @@
+
+struct VertexDataInput {
+	float4 vertex: POSITION;
+	float3 normal: NORMAL;
+	float3 color: COLOR;
+};
+
+struct VertexDataOutput {
+	float4 projv  : POSITION;
+	float3 normal : TEXCOORD0;
+	float3 vxyz : TEXCOORD1;
+	float3 color: COLOR;
+	float3 dbg : TEXCOORD7;
+};
+
+struct PixelDataOutput {
+	float3 color: COLOR;
+};
+
+VertexDataOutput VertexMain(VertexDataInput vdi, 
+  uniform float4x4 modelViewProj, uniform float morphFraction,
+  uniform float3 objectCenter, uniform float sphereRadius) {
+
+  VertexDataOutput ret;
+
+  // morph vertex
+//  float3 ray = normalize((vdi.vertex.xyz - objectCenter)); // direction from sphere
+				// center to vertex
+//  float3 sv = objectCenter + ray*sphereRadius;  // position of vertex on sphere
+//  float4 mv; // morphed vertex
+//  mv.xyz = vdi.vertex.xyz + (sv-vdi.vertex.xyz)*morphFraction;
+//  mv.w = 1.0f;
+
+//  mv = vdi.vertex;
+
+//  ret.projv = mul(modelViewProj, mv);
+  ret.projv = mul(modelViewProj, vdi.vertex);
+  ret.normal = vdi.normal;
+  ret.vxyz = vdi.vertex.xyz;
+//  ret.vxyz = mv.xyz;
+  ret.color = vdi.color;
+  ret.dbg = float3(1.0f, 1.0f, 0.0f);
+  return ret;
+
+}
+
+PixelDataOutput FragmentMain(VertexDataOutput pdi, uniform float3 ppcC,
+	uniform float4x4 lmatrix,
+	uniform sampler2D tex0 : TEXUNIT0, uniform sampler2D tex1 : TEXUNIT1,
+	uniform sampler2D tex2: TEXUNIT2) {
+
+  PixelDataOutput ret;
+//  ret.color = pdi.dbg;
+//  return ret;
+
+  ret.color = pdi.color;
+  
+  if (pdi.color.r < 0.5f)
+	ret.color = tex2D(tex0, pdi.color.rg).rgb;
+  else
+	ret.color = tex2D(tex1, pdi.color.rg).rgb;
+
+
+#if 0
+  float4 smc = mul(lmatrix, float4(pdi.vxyz, 1.0f));
+  smc.xyz = smc.xyz / smc.w;
+  smc.xyz = smc.xyz*0.5f + float3(0.5f, 0.5f, 0.5f);
+  if (tex2D(tex2, smc.xy).r < smc.z)
+	ret.color = float3(0.0f, 0.0f, 0.0f);
+#else
+
+	float4x4 bias = {
+		{0.5, 0.0, 0.0, 0.5},
+		{0.0, 0.5, 0.0, 0.5},
+		{0.0, 0.0, 0.5, 0.5},
+		{0.0, 0.0, 0.0, 1.0}
+		};
+
+	float4x4 blm = mul(bias, lmatrix);
+
+	float4 smc;
+	// WITH MANUAL BIASING [-1 1] to [0 1]
+	smc = mul(lmatrix, float4(pdi.vxyz, 1.0f));
+	smc.xyz = smc.xyz*0.5 + float3(0.5f, 0.5f, 0.5f)*smc.w;
+
+	// WITH BIAS MATRIX
+	smc = mul(blm, float4(pdi.vxyz, 1.0f));
+
+	smc.z -= 0.0001f * smc.w;
+	ret.color.r = tex2Dproj(tex2, smc);
+	ret.color.g = 0.0f;
+	ret.color.b = 0.0f;
+
+#endif
+  return ret;
+
+}
