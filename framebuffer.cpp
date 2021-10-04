@@ -48,6 +48,8 @@ void FrameBuffer::draw() {
 	}
 	if (isHW == 1) {
 		scene->RenderHW();
+		glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pix);
+		cerr << "pixels read!" << endl;
 		return;
 	}
 
@@ -65,6 +67,7 @@ void FrameBuffer::draw() {
 	}
 
 	glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pix);
+	cerr << "pixels read!" << endl;
 
 }
 
@@ -200,6 +203,12 @@ void FrameBuffer::KeyboardHandle() {
 		scene->path->Load("mydbg/path_vd.txt");
 		cerr << "INFO: Path Loaded" << endl;
 		scene->Render();
+		break;
+	}
+	case '6': {
+		scene->tmeshes[12].setVisibleTrianglesHWFrameBuffer(scene->hwfb);
+		cerr << "INFO: Visible Triangles Set From FrameBuffer" << endl;
+		needRender = 1;
 		break;
 	}
 	case '-':

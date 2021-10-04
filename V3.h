@@ -30,4 +30,7 @@ public:
 	V3 Light(V3 lv, V3 nv, float ka);
 	V3 Reflect(V3 ray);
 	bool areValuesfinite();
+
+	static V3 indexToRGB(int index);
+	static int RGBToIndex(V3 rgb);
 };

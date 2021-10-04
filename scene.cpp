@@ -298,6 +298,8 @@ void Scene::Render(FrameBuffer *rfb, PPC *rppc) {
 	rfb->ClearZB();
 	rfb->ClearItemBuffer();
 
+	cerr << "Software render!" << endl;
+
 	for (int tmi = 0; tmi < tmeshesN; tmi++) {
 		if (!tmeshes[tmi].onFlag)
 			continue;
@@ -611,6 +613,12 @@ void Scene::EdgeVRSetup() {
 	for (int tmi = 0; tmi < tmeshesN; tmi++)
 		tmeshes[tmi].onFlag = 0;
 	tmeshes[12].LoadBin("geometry/Manhattan.bin");
+	
+	tmeshes[12].explodeMesh();
+	cerr << "INFO: Manhattan mesh vert count: " << tmeshes[12].vertsN << ", tri count: " << tmeshes[12].trisN << endl;
+	tmeshes[12].colorWithIndices();
+	tmeshes[12].renderOnlyVisTrisFlag = 1;
+
 	tmeshes[12].onFlag = 1;
 //	tmeshes[12].msiFlag = 0;
 	AABB aabb;

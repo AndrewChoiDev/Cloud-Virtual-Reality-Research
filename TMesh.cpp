@@ -6,6 +6,7 @@
 #include "M33.h"
 #include "TMesh.h"
 #include "AABB.h"
+#include <bitset>
 
 using namespace std;
 
@@ -257,6 +258,10 @@ void TMesh::RenderFilled(FrameBuffer* fb, PPC* ppc, V3 C, V3 L, float ka) {
 	}
 
 	for (int tri = 0; tri < trisN; tri++) {
+		if ((renderOnlyVisTrisFlag == 1 && visTris[tri] == INVISIBLE_TRI) && true) {
+			continue;
+		}
+
 		unsigned int vinds[3] = { tris[3 * tri + 0], tris[3 * tri + 1], tris[3 * tri + 2] };
 		if (
 			pverts[vinds[0]][0] == FLT_MAX ||
@@ -812,9 +817,11 @@ void TMesh::RenderRC(FrameBuffer* fb, PPC* ppc, float vcr) {
 
 
 void TMesh::ClearVisibleTriangles() {
-
+	if (!visTris) {
+		visTris = new unsigned char[trisN];
+	}
 	for (int tri = 0; tri < trisN; tri++)
-		visTris[tri] = 0;
+		visTris[tri] = INVISIBLE_TRI;
 
 }
 
@@ -823,7 +830,7 @@ void TMesh::AddVisibleTriangles(FrameBuffer* fb) {
 
 	for (int uv = 0; uv < fb->w * fb->h; uv++)
 		if (fb->trID[uv] != 0xFFFFFFFF)
-			visTris[fb->trID[uv]] = 1;
+			visTris[fb->trID[uv]] = VISIBLE_TRI;
 
 }
 
@@ -835,3 +842,108 @@ int TMesh::CountVisibleTriangles() {
 			ret++;
 	return ret;
 }
+
+
+
+void TMesh::explodeMesh()
+{
+
+	this->vertsN = this->trisN * 3;
+	auto eVerts = new V3[this->vertsN];
+	V3* eColors = NULL;
+	V3* eNormals = NULL;
+	if (this->colors)
+		eColors = new V3[this->vertsN];
+	if (this->normals)
+		eNormals = new V3[this->vertsN];
+
+	for (int i = 0; i < this->trisN * 3; i++) {
+		auto vertIndex = tris[i];
+		this->tris[i] = i;
+
+		eVerts[i] = this->verts[vertIndex];
+		if (this->colors)
+			eColors[i] = this->colors[vertIndex];
+		if (this->normals)
+			eNormals[i] = this->normals[vertIndex];
+	}
+	this->verts = eVerts;
+	this->colors = eColors;
+	this->normals = eNormals;
+
+
+}
+
+// Exploded mesh -> tris[i] == i for all entries
+bool TMesh::isMeshExploded()
+{
+	if (this->trisN * 3 != this->vertsN) {
+		return false;
+	}
+
+	for (int i = 0; i < this->vertsN; i++) {
+		if (this->tris[i] != i) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
+
+void TMesh::colorWithIndices()
+{
+	if (this->isMeshExploded() == false) {
+		cerr << "Error: Mesh was not exploded" << endl;
+		return;
+	}
+
+	for (int i = 0; i < this->trisN; i++) {
+		V3 indexInRGB = V3::indexToRGB(i);
+		for (int j = 0; j < 3; j++) {
+			colors[3 * i + j] = indexInRGB;
+		}
+	}
+}
+
+void TMesh::setVisibleTrianglesHWFrameBuffer(FrameBuffer* hwfb)
+{
+	ClearVisibleTriangles();
+
+	int w = hwfb->w;
+	int h = hwfb->h;
+	//int byteCount = w * h * 3;
+
+	//uint8_t* pixels = new uint8_t[byteCount];
+
+	//glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+	auto printNum = rand() % (w * h);
+
+	//for (int g = 0; g < trisN; g++) {
+		//visTris[g] = VISIBLE_TRI;
+	//}
+	
+	hwfb->redraw();
+	auto pixels = hwfb->pix;
+
+	for (int p = 0; p < w * h; p++) {
+		int index = pixels[p] & 0x00ffffff;
+
+		//for (int i = 0; i < 3; i++) {
+			//auto byteComp = pixels[p * 4 + i];
+			//index |= byteComp << (8 * i);
+		//}
+
+		if (p == printNum) {
+			cerr << "pixels: " << std::bitset<32>(pixels[p])
+				<< endl;
+		}
+
+		this->visTris[index] = VISIBLE_TRI;
+	}
+	
+}
+
+

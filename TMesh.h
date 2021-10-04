@@ -8,6 +8,9 @@
 
 class TMesh {
 public:
+	const char VISIBLE_TRI = 1;
+	const char INVISIBLE_TRI = 0;
+
 	V3* verts;
 	int vertsN;
 	unsigned int* tris;
@@ -18,11 +21,14 @@ public:
 	int onFlag;
 	int msiFlag;
 	int reflectorFlag;
+	int renderOnlyVisTrisFlag;
 	V3* colors;
 	V3* normals;
 	FrameBuffer* texture;
 	TMesh() : verts(0), vertsN(0), tris(0), trisN(0), colors(0), normals(0),
-		onFlag(1), msiFlag(1), texture(0), reflectorFlag(0), visTris(0) {};
+		onFlag(1), msiFlag(1), texture(0), reflectorFlag(0), renderOnlyVisTrisFlag(0), visTris(0) {
+		ClearVisibleTriangles();
+	};
 	void SetToCube(V3 cc, float sideLength, unsigned int color0, unsigned int color1);
 	void SetQuad(V3* qverts, V3* qcolors);
 	void Allocate(int _vertsN, int _trisN);
@@ -52,4 +58,8 @@ public:
 	void ClearVisibleTriangles();
 	void AddVisibleTriangles(FrameBuffer* fb);
 	int CountVisibleTriangles();
+	void explodeMesh();
+	bool isMeshExploded();
+	void colorWithIndices();
+	void setVisibleTrianglesHWFrameBuffer(FrameBuffer* hwfb);
 };

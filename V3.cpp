@@ -176,3 +176,30 @@ bool V3::areValuesfinite()
 	return isfinite(xyz[0]) && isfinite(xyz[1]) && isfinite(xyz[2]);
 }
 
+
+// byte: 0, 1, 2, 3, ... 255
+// float: 0.5/256, 1.5/256, ... 255.5/256
+
+V3 V3::indexToRGB(int index)
+{
+	auto rgb = V3();
+
+	for (int i = 0; i < 3; i++) {
+		auto byteComp = (index >> (8 * i)) & 0xff;
+		rgb.xyz[i] = (static_cast<float>(byteComp)) / 255.f;
+	}
+
+	return rgb;
+}
+
+int V3::RGBToIndex(V3 rgb)
+{
+	int index = 0;
+	
+	for (int i = 0; i < 3; i++) {
+		auto byteComp = static_cast<int>(floor(rgb.xyz[i] * 256.f));
+		index |= byteComp << (8 * i);
+	}
+	
+	return index;
+}
