@@ -915,21 +915,12 @@ void TMesh::setVisibleTrianglesHWFrameBuffer(FrameBuffer* hwfb)
 	int w = hwfb->w;
 	int h = hwfb->h;
 
-
-	auto printNum = rand() % (w * h);
-
 	
 	hwfb->redraw();
 	auto pixels = hwfb->pix;
 
 	for (int p = 0; p < w * h; p++) {
 		int index = pixels[p] & 0x00ffffff;
-
-
-		if (p == printNum) {
-			cerr << "pixels: " << std::bitset<32>(pixels[p])
-				<< endl;
-		}
 
 		this->visTris[index] = VISIBLE_TRI;
 	}
