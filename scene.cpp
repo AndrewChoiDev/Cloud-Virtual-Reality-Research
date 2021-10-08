@@ -615,6 +615,8 @@ void Scene::EdgeVRSetup() {
 	tmeshes[12].LoadBin("geometry/Manhattan.bin");
 	
 	tmeshes[12].explodeMesh();
+	tmeshes[12].SetAllTrianglesVisible();
+	tmeshes[12] = tmeshes[12].constructVisibleMesh();
 	cerr << "INFO: Manhattan mesh vert count: " << tmeshes[12].vertsN << ", tri count: " << tmeshes[12].trisN << endl;
 	tmeshes[12].colorWithIndices();
 	tmeshes[12].renderOnlyVisTrisFlag = 1;

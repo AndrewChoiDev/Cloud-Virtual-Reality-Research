@@ -826,6 +826,14 @@ void TMesh::ClearVisibleTriangles() {
 
 }
 
+void TMesh::SetAllTrianglesVisible() {
+	if (!visTris) {
+		visTris = new unsigned char[trisN];
+	}
+	for (int tri = 0; tri < trisN; tri++)
+		visTris[tri] = VISIBLE_TRI;
+}
+
 
 void TMesh::AddVisibleTriangles(FrameBuffer* fb) {
 
@@ -912,21 +920,93 @@ void TMesh::setVisibleTrianglesHWFrameBuffer(FrameBuffer* hwfb)
 {
 	ClearVisibleTriangles();
 
+	addVisibleTrianglesHWFrameBuffer(hwfb);
+	
+}
+
+void TMesh::addVisibleTrianglesHWFrameBuffer(FrameBuffer* hwfb)
+{
 	int w = hwfb->w;
 	int h = hwfb->h;
 
-	
+
 	hwfb->redraw();
 	auto pixels = hwfb->pix;
+
+	auto invalidIndices = 0;
 
 	for (int p = 0; p < w * h; p++) {
 		int index = pixels[p] & 0x00ffffff;
 
-		this->visTris[index] = VISIBLE_TRI;
+		if (index < this->trisN) {
+			this->visTris[index] = VISIBLE_TRI;
+		}
+		else {
+			invalidIndices += 1;
+		}
+		
 	}
 
-	cerr << "INFO: Visible Triangle Count: " << CountVisibleTriangles() << endl;
-	
+	//cerr << "INFO: Visible Triangle Count: " << CountVisibleTriangles() << endl;
+}
+
+// implementation as of now outputs an exploded mesh
+TMesh TMesh::constructVisibleMesh()
+{
+	// copy values
+	TMesh visibleMesh = *this;
+
+	visibleMesh.trisN = this->CountVisibleTriangles();
+	visibleMesh.vertsN = visibleMesh.trisN * 3;
+
+	// allocate arrays for new mesh
+	visibleMesh.verts = new V3[visibleMesh.vertsN];
+	visibleMesh.tris = new unsigned int[visibleMesh.trisN * 3];
+	visibleMesh.visTris = new unsigned char[visibleMesh.trisN];
+	if (this->colors)
+		visibleMesh.colors = new V3[visibleMesh.vertsN];
+	if (this->normals)
+		visibleMesh.normals = new V3[visibleMesh.vertsN];
+
+	auto trisAdded = 0;
+	// per triangle
+	for (int i = 0; i < this->trisN; i++) {
+		if (this->visTris[i] == VISIBLE_TRI) {
+			// per vertex
+			for (int j = 0; j < 3; j++) {
+				auto destIndex = trisAdded * 3 + j;
+				auto vertIndex = this->tris[i * 3 + j];
+
+				// copy vertex attributes
+				visibleMesh.verts[destIndex] = this->verts[vertIndex];
+				if (this->colors)
+					visibleMesh.colors[destIndex] = this->colors[vertIndex];
+				if (this->normals)
+					visibleMesh.normals[destIndex] = this->normals[vertIndex];
+
+				visibleMesh.tris[destIndex] = destIndex;
+			}
+			visibleMesh.visTris[trisAdded] = VISIBLE_TRI;
+
+			trisAdded += 1;
+		}
+	}
+
+	auto triPercentMesh = (static_cast<float>(trisAdded) / static_cast<float>(this->trisN)) * 100.0f;
+	AABB newMeshAABB;
+	visibleMesh.SetAABB(newMeshAABB);
+	AABB originalMeshAABB;
+	this->SetAABB(originalMeshAABB);
+	auto sizePercentMesh = (newMeshAABB.GetDiagonal() / originalMeshAABB.GetDiagonal()) * 100.0f;
+
+	// reporting information
+	cerr << "INFO: Visible Mesh" << endl << 
+		"\tTri Count: " << trisAdded << endl << 
+		"\tTri percentage of original mesh: " << triPercentMesh << "%" << endl <<
+		"\tDiagonal:" << newMeshAABB.GetDiagonal() << endl << 
+		"\tPercentage of original Mesh Diagonal: " << sizePercentMesh << endl;
+
+	return visibleMesh;
 }
 
 

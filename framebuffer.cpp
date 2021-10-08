@@ -207,6 +207,7 @@ void FrameBuffer::KeyboardHandle() {
 	}
 	case '6': {
 		scene->tmeshes[12].setVisibleTrianglesHWFrameBuffer(scene->hwfb);
+		scene->tmeshes[12] = scene->tmeshes[12].constructVisibleMesh();
 		cerr << "INFO: Visible Triangles Set From FrameBuffer" << endl;
 		needRender = 1;
 		break;
