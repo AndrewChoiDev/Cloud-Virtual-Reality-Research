@@ -178,7 +178,7 @@ bool V3::areValuesfinite()
 
 
 // byte: 0, 1, 2, 3, ... 255
-// float: 0.5/256, 1.5/256, ... 255.5/256
+// float: 0.f/255f, 1.f/255f, 2.f/255f, ... 255f
 
 V3 V3::indexToRGB(int index)
 {

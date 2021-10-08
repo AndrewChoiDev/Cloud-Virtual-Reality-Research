@@ -616,6 +616,7 @@ void TMesh::RenderHW() {
 		glEnableClientState(GL_NORMAL_ARRAY);
 	glVertexPointer(3, GL_FLOAT, 0, (float*)verts);
 	glColorPointer(3, GL_FLOAT, 0, (float*)colors);
+	// maybe use this for glColorPointer(3, GL_UNSIGNED_)
 	if (normals)
 		glNormalPointer(GL_FLOAT, 0, (float*)normals);
 	// if TMesh is to be textured, provide texture coordinates for each vertex
@@ -913,17 +914,10 @@ void TMesh::setVisibleTrianglesHWFrameBuffer(FrameBuffer* hwfb)
 
 	int w = hwfb->w;
 	int h = hwfb->h;
-	//int byteCount = w * h * 3;
 
-	//uint8_t* pixels = new uint8_t[byteCount];
-
-	//glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
 	auto printNum = rand() % (w * h);
 
-	//for (int g = 0; g < trisN; g++) {
-		//visTris[g] = VISIBLE_TRI;
-	//}
 	
 	hwfb->redraw();
 	auto pixels = hwfb->pix;
@@ -931,10 +925,6 @@ void TMesh::setVisibleTrianglesHWFrameBuffer(FrameBuffer* hwfb)
 	for (int p = 0; p < w * h; p++) {
 		int index = pixels[p] & 0x00ffffff;
 
-		//for (int i = 0; i < 3; i++) {
-			//auto byteComp = pixels[p * 4 + i];
-			//index |= byteComp << (8 * i);
-		//}
 
 		if (p == printNum) {
 			cerr << "pixels: " << std::bitset<32>(pixels[p])
@@ -943,6 +933,8 @@ void TMesh::setVisibleTrianglesHWFrameBuffer(FrameBuffer* hwfb)
 
 		this->visTris[index] = VISIBLE_TRI;
 	}
+
+	cerr << "INFO: Visible Triangle Count: " << CountVisibleTriangles() << endl;
 	
 }
 
