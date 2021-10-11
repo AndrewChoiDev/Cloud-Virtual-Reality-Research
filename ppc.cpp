@@ -271,6 +271,7 @@ void PPC::Load(char *fname) {
 
 }
 
+
 V3 PPC::GetVD() {
 
 	V3 ret = a ^ b;

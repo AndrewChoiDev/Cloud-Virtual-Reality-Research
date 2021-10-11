@@ -2,6 +2,7 @@
 
 #include "V3.h"
 #include "ppc.h"
+#include "TMesh.h"
 
 class Path {
 public:
@@ -24,4 +25,5 @@ public:
 	void Load(char *fname); // load path from text file
 	float GetTotalTime();
 	void Render(FrameBuffer* fb, PPC* ppc);
+	void accumulateVisTrisOnSegment(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh);
 };

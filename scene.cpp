@@ -653,7 +653,81 @@ void Scene::PlaybackPath(float fps) {
 		Fl::check();
 	}
 	*ppc = ppc0;
+	fb->redraw();
+	hwfb->redraw();
+	Fl::check();
 
+}
+
+void Scene::PlaybackPathHWSideBySide(float fps) {
+	auto visibleMesh = tmeshes[12].constructVisibleMesh();
+	auto sideHwfb = new FrameBuffer(40, 40, hwfb->w, hwfb->h, 128);
+	sideHwfb->isHW = 1;
+	sideHwfb->show();
+	sideHwfb->label("Visible Mesh Only");
+
+	auto fullMesh = tmeshes[12];
+
+
+	float time = path->GetTotalTime();
+	PPC ppc0(*ppc);
+	for (int fi = 0; fi < (int)(time * fps); fi++) {
+		path->SetCamera(ppc, ppc, (float)fi / fps);
+		tmeshes[12] = fullMesh;
+		hwfb->redraw();
+		Fl::check();
+		tmeshes[12] = visibleMesh;
+		sideHwfb->redraw();
+		Fl::check();
+	}
+	tmeshes[12] = fullMesh;
+	*ppc = ppc0;
+	fb->redraw();
+	hwfb->redraw();
+	Fl::check();
+
+	sideHwfb->hide();
+}
+
+void Scene::PlaybackPathHWOffsets(float fps) {
+
+
+	auto visibleMesh = tmeshes[12].constructVisibleMesh();
+	auto tiltedHwfb = new FrameBuffer(40, 40, hwfb->w, hwfb->h, 128);
+	tiltedHwfb->isHW = 1;
+	tiltedHwfb->show();
+	tiltedHwfb->label("Tilted Hardware Render");
+
+	auto fullMesh = tmeshes[12];
+
+	tmeshes[12] = visibleMesh;
+
+
+	float time = path->GetTotalTime();
+	PPC ppc0(*ppc);
+	for (int fi = 0; fi < (int)(time * fps); fi++) {
+		path->SetCamera(ppc, ppc, (float)fi / fps);
+		PPC ppcPathCam(*ppc);
+
+		hwfb->redraw();
+		Fl::check();
+
+		ppc->TranslateUpDown(220.0f);
+		ppc->TranslateFrontBack(-450.0f);
+		ppc->TiltUpDown(-20.0f);
+
+		tiltedHwfb->redraw();
+		Fl::check();
+
+		*ppc = ppcPathCam;
+	}
+	tmeshes[12] = fullMesh;
+	*ppc = ppc0;
+	fb->redraw();
+	hwfb->redraw();
+	Fl::check();
+
+	tiltedHwfb->hide();
 }
 
 void Scene::CollectVisibleTrianglesOnPath(float t0, float t1, float fps) {
@@ -679,7 +753,8 @@ void Scene::CollectVisibleTrianglesOnPath(float t0, float t1, float fps) {
 void Scene::DBG() {
 
 	{
-		PlaybackPath(30.0f);
+		//PlaybackPath(30.0f);
+		path->accumulateVisTrisOnSegment(hwfb, ppc, 30.0f, &(tmeshes[12]));
 		return;
 		CollectVisibleTrianglesOnPath(0.0f, 2.0f, 30.0f);
 		return;

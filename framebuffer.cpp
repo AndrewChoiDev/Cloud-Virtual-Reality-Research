@@ -49,7 +49,7 @@ void FrameBuffer::draw() {
 	if (isHW == 1) {
 		scene->RenderHW();
 		glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pix);
-		cerr << "pixels read!" << endl;
+		//cerr << "pixels read!" << endl;
 		return;
 	}
 
@@ -206,10 +206,11 @@ void FrameBuffer::KeyboardHandle() {
 		break;
 	}
 	case '6': {
-		scene->tmeshes[12].setVisibleTrianglesHWFrameBuffer(scene->hwfb);
-		scene->tmeshes[12] = scene->tmeshes[12].constructVisibleMesh();
-		cerr << "INFO: Visible Triangles Set From FrameBuffer" << endl;
-		needRender = 1;
+		scene->PlaybackPathHWOffsets(30.0f);
+		//scene->tmeshes[12].setVisibleTrianglesHWFrameBuffer(scene->hwfb);
+		//scene->tmeshes[12] = scene->tmeshes[12].constructVisibleMesh();
+		//cerr << "INFO: Visible Triangles Set From FrameBuffer" << endl;
+		//needRender = 1;
 		break;
 	}
 	case '-':

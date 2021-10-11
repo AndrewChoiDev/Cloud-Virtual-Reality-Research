@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <fstream>
+#include "TMesh.h"
 
 void Path::AddGroundNode(V3 newGroundNode) {
 
@@ -145,5 +146,24 @@ void Path::Render(FrameBuffer* fb, PPC* ppc) {
 	for (int ni = 0; ni < nodesN; ni++) {
 		fb->Draw3DPoint(nodes[ni], ppc, 0xFF0000FF, 13);
 	}
+
+}
+
+void Path::accumulateVisTrisOnSegment(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh)
+{
+
+	tMesh->ClearVisibleTriangles();
+
+	float time = this->GetTotalTime();
+	PPC ppc0(*ppc);
+	for (int fi = 0; fi < (int)(time * fps); fi++) {
+		this->SetCamera(ppc, ppc, (float)fi / fps);
+		hwfb->redraw();
+		Fl::check();
+		tMesh->addVisibleTrianglesHWFrameBuffer(hwfb);
+	}
+	*ppc = ppc0;
+	hwfb->redraw();
+	Fl::check();
 
 }

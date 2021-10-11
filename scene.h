@@ -82,6 +82,8 @@ public:
 	Path *path;
 	void PlaybackPath(float fps);
 	void CollectVisibleTrianglesOnPath(float t0, float t1, float fps);
+	void PlaybackPathHWSideBySide(float fps);
+	void PlaybackPathHWOffsets(float fps);
 };
 
 extern Scene *scene;
