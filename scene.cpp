@@ -617,11 +617,11 @@ void Scene::EdgeVRSetup() {
 	tmeshes[12].LoadBin("geometry/Manhattan.bin");
 	
 	tmeshes[12].explodeMesh();
-	tmeshes[12].SetAllTrianglesVisible();
-	tmeshes[12] = tmeshes[12].constructVisibleMesh();
-	cerr << "INFO: Manhattan mesh vert count: " << tmeshes[12].vertsN << ", tri count: " << tmeshes[12].trisN << endl;
-	tmeshes[12].colorWithIndices();
-	tmeshes[12].renderOnlyVisTrisFlag = 1;
+	//tmeshes[12].SetAllTrianglesVisible();
+	//tmeshes[12] = tmeshes[12].constructVisibleMesh();
+	//cerr << "INFO: Manhattan mesh vert count: " << tmeshes[12].vertsN << ", tri count: " << tmeshes[12].trisN << endl;
+	//tmeshes[12].colorWithIndices();
+	//tmeshes[12].renderOnlyVisTrisFlag = 1;
 
 	tmeshes[12].onFlag = 1;
 //	tmeshes[12].msiFlag = 0;
@@ -641,6 +641,8 @@ void Scene::EdgeVRSetup() {
 	path->speed = 50.0f;
 	path->upGuidance = V3(0.0f, 1.0f, 0.0f);
 	path->height = 2.5f;
+
+	tmeshes[12] = tmeshes[12].constructNearMesh(ppc->C, 500.0f);
 }
 
 void Scene::PlaybackPath(float fps) {

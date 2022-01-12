@@ -91,4 +91,7 @@ public:
 	void SetAverageVertexNormals();
 	void DirectionalLight(V3 lv, float ka);
 	void SetVertexNormalsAndColorsBlackWhiteDirectional();
+	TMesh constructNearMesh(V3 origin, float distance);
+	TMesh constructFarMesh(V3 origin, float distance);
+	TMesh constructMeshFromTriMask(bool* triMask, int maskCount);
 };

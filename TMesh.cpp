@@ -1136,6 +1136,94 @@ void TMesh::SetVertexNormalsAndColorsBlackWhiteDirectional()
 	DirectionalLight(lv, ka);
 }
 
+// only works with exploded meshes
+TMesh TMesh::constructNearMesh(V3 origin, float distance)
+{
+	// find the triangles that intersect with the near region
+	auto triIntersectNearArray = new bool[this->trisN];
+
+	auto trisToAdd = 0;
+	// per triangle
+	for (int i = 0; i < this->trisN; i++) {
+		triIntersectNearArray[i] = false;
+
+		// per vertex
+		for (int j = 0; j < 3; j++) {
+			auto vertIndex = this->tris[i * 3 + j];
+
+			// displacement from origin
+			auto disp = this->verts[vertIndex] - origin;
+
+			if (disp.Length() <= distance) {
+				triIntersectNearArray[i] = true;
+			}
+		}
+
+		if (triIntersectNearArray[i] == true) {
+			trisToAdd += 1;
+		}
+	}
+
+	return constructMeshFromTriMask(triIntersectNearArray, trisToAdd);
+}
+
+TMesh TMesh::constructMeshFromTriMask(bool* triMask, int maskCount) {
+
+	auto construct = *this;
+	construct.Allocate(maskCount * 3, maskCount);
+
+	// add triangles that intersect with near region
+	auto trisAdded = 0;
+	// per triangle
+	for (int i = 0; i < this->trisN; i++) {
+		if (triMask[i] == true) {
+			// per vertex
+			for (int j = 0; j < 3; j++) {
+				auto vertIndex = this->tris[i * 3 + j];
+				auto destIndex = trisAdded * 3 + j;
+
+				construct.verts[destIndex] = this->verts[vertIndex];
+				construct.colors[destIndex] = this->colors[vertIndex];
+				construct.tris[destIndex] = destIndex;
+			}
+
+			trisAdded += 1;
+		}
+	}
+
+	return construct;
+}
+
+TMesh TMesh::constructFarMesh(V3 origin, float distance)
+{
+	// find the triangles that intersect with the near region
+	auto triIntersectNearArray = new bool[this->trisN];
+
+	auto trisToAdd = 0;
+	// per triangle
+	for (int i = 0; i < this->trisN; i++) {
+		triIntersectNearArray[i] = false;
+
+		// per vertex
+		for (int j = 0; j < 3; j++) {
+			auto vertIndex = this->tris[i * 3 + j];
+
+			// displacement from origin
+			auto disp = this->verts[vertIndex] - origin;
+
+			if (disp.Length() > distance) {
+				triIntersectNearArray[i] = true;
+			}
+		}
+
+		if (triIntersectNearArray[i] == true) {
+			trisToAdd += 1;
+		}
+	}
+
+	return constructMeshFromTriMask(triIntersectNearArray, trisToAdd);
+}
+
 void TMesh::DirectionalLight(V3 lv, float ka) {
 
 	auto ocolors = new V3[vertsN];
