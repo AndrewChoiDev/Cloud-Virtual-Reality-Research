@@ -32,6 +32,12 @@ V3 V3::operator-(V3 v1) {
 }
 
 
+bool operator==(const V3& a, const V3& b)
+{
+	return a.xyz[0] == b.xyz[0] 
+		&& a.xyz[1] == b.xyz[1] && a.xyz[2] == b.xyz[2];
+}
+
 ostream& operator<<(ostream& ostr, V3 v) {
 
 	return ostr << v[0] << " " << v[1] << " " << v[2] << endl;

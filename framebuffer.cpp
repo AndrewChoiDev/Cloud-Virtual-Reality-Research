@@ -80,14 +80,18 @@ int FrameBuffer::handle(int event) {
 		return 0;
 	}
 	case FL_LEFT_MOUSE: {
-		cerr << "INFO: left mouse click" << endl << endl;
+		cerr << "INFO: left mouse click" << endl << "create node" << endl;
 		int u = Fl::event_x();
 		int v = Fl::event_y();
 		if (u < 0 || u > w - 1 || v < 0 || v > h - 1)
 			return 0;
 		V3 pP(.5f + (float)u, .5f + (float)v, GetZ(u, v));
 		V3 P = scene->ppc->UnProject(pP);
-		scene->path->AddGroundNode(P);
+
+		scene->streetLinesGraphSystem.handleMousePressPoint(P);
+
+		//scene->path->AddGroundNode(P);
+
 		scene->Render();
 		return 0;
 	}
@@ -195,22 +199,31 @@ void FrameBuffer::KeyboardHandle() {
 		break;
 	}
 	case '4': {
-		scene->path->Save("mydbg/path_vd.txt");
+		scene->streetLinesGraphSystem.path.Save("mydbg/path_vd.txt");
 		cerr << "INFO: Path Saved" << endl;
 		break;
 	}
 	case '5': {
-		scene->path->Load("mydbg/path_vd.txt");
+		scene->streetLinesGraphSystem.path.Load("mydbg/path_vd.txt");
 		cerr << "INFO: Path Loaded" << endl;
 		scene->Render();
 		break;
 	}
 	case '6': {
-		scene->PlaybackPathHWOffsets(30.0f);
+		//scene->PlaybackPathHWSideBySide(30.0f);
+		//scene->PlaybackPathHWOffsets(30.0f);
 		//scene->tmeshes[12].setVisibleTrianglesHWFrameBuffer(scene->hwfb);
 		//scene->tmeshes[12] = scene->tmeshes[12].constructVisibleMesh();
 		//cerr << "INFO: Visible Triangles Set From FrameBuffer" << endl;
 		//needRender = 1;
+		//scene->PlaybackPathChunks(30.0f);
+		
+		//scene->PlaybackPath(30.0f);
+		scene->PlaybackDeltaPathChunks(30.0f);
+		break;
+	}
+	case '7': {
+		//scene->streetLinesGraphSystem.
 		break;
 	}
 	case '-':
@@ -224,10 +237,11 @@ void FrameBuffer::KeyboardHandle() {
 	case 'p':
 		scene->ppc->Save("mydbg/view.txt");
 		break;
-	default:
-		cerr << "INFO: do not understand keypress" << endl;
-		return;
+	//default:
+	//	cerr << "INFO: do not understand keypress" << endl;
+	//	return;
 	}
+	scene->streetLinesGraphSystem.handleKey(key, needRender);
 
 //	scene->ResampleERI(scene->eri, scene->fb, scene->ppc);
 	if (needRender)

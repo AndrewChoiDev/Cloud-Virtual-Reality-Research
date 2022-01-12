@@ -66,6 +66,7 @@
       <AdditionalIncludeDirectories>externals\tiff-4.0.8\libtiff;externals\glew-2.1.0\include;externals\freeglut-3.0.0\include;externals\Cg\include;externals\fltk-1.3.4-1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -90,6 +91,8 @@
     <ClInclude Include="CGInterface.h" />
     <ClInclude Include="framebuffer.h" />
     <ClInclude Include="glext.h" />
+    <ClInclude Include="Line.h" />
+    <ClInclude Include="PosGraphMatrix.h" />
     <ClInclude Include="gui.h" />
     <ClInclude Include="M33.h" />
     <ClInclude Include="Path.h" />
@@ -97,6 +100,8 @@
     <ClInclude Include="RandomCamera.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="StreetLines.h" />
+    <ClInclude Include="StreetLinesGraphSystem.h" />
     <ClInclude Include="TMesh.h" />
     <ClInclude Include="V3.h" />
   </ItemGroup>
@@ -104,6 +109,8 @@
     <ClCompile Include="AABB.cpp" />
     <ClCompile Include="CGInterface.cpp" />
     <ClCompile Include="framebuffer.cpp" />
+    <ClCompile Include="Line.cpp" />
+    <ClCompile Include="PosGraphMatrix.cpp" />
     <ClCompile Include="gui.cxx">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -117,6 +124,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="StreetLines.cpp" />
+    <ClCompile Include="StreetLinesGraphSystem.cpp" />
     <ClCompile Include="TMesh.cpp" />
     <ClCompile Include="V3.cpp" />
   </ItemGroup>

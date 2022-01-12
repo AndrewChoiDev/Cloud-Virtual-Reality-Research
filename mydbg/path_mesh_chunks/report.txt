@@ -1,0 +1,231 @@
+REPORT FOR MESH CHUNKS ALONG PATH
+original mesh tri count: 3691106
+
+chunk_0
+tri count: 1775
+tri percentage of original mesh: 0.0480886%
+
+chunk_1
+tri count: 534
+tri percentage of original mesh: 0.0144672%
+
+chunk_2
+tri count: 905
+tri percentage of original mesh: 0.0245184%
+
+chunk_3
+tri count: 242
+tri percentage of original mesh: 0.0065563%
+
+chunk_4
+tri count: 1379
+tri percentage of original mesh: 0.0373601%
+
+chunk_5
+tri count: 111
+tri percentage of original mesh: 0.00300723%
+
+chunk_6
+tri count: 126
+tri percentage of original mesh: 0.00341361%
+
+chunk_7
+tri count: 110
+tri percentage of original mesh: 0.00298014%
+
+chunk_8
+tri count: 91
+tri percentage of original mesh: 0.00246539%
+
+chunk_9
+tri count: 112
+tri percentage of original mesh: 0.00303432%
+
+chunk_10
+tri count: 1150
+tri percentage of original mesh: 0.031156%
+
+chunk_11
+tri count: 1027
+tri percentage of original mesh: 0.0278236%
+
+chunk_12
+tri count: 208
+tri percentage of original mesh: 0.00563517%
+
+chunk_13
+tri count: 157
+tri percentage of original mesh: 0.00425347%
+
+chunk_14
+tri count: 896
+tri percentage of original mesh: 0.0242746%
+
+chunk_15
+tri count: 456
+tri percentage of original mesh: 0.012354%
+
+chunk_16
+tri count: 109
+tri percentage of original mesh: 0.00295304%
+
+chunk_17
+tri count: 124
+tri percentage of original mesh: 0.00335943%
+
+chunk_18
+tri count: 205
+tri percentage of original mesh: 0.00555389%
+
+chunk_19
+tri count: 87
+tri percentage of original mesh: 0.00235702%
+
+chunk_20
+tri count: 96
+tri percentage of original mesh: 0.00260085%
+
+chunk_21
+tri count: 115
+tri percentage of original mesh: 0.0031156%
+
+chunk_22
+tri count: 61
+tri percentage of original mesh: 0.00165262%
+
+chunk_23
+tri count: 59
+tri percentage of original mesh: 0.00159844%
+
+chunk_24
+tri count: 70
+tri percentage of original mesh: 0.00189645%
+
+chunk_25
+tri count: 70
+tri percentage of original mesh: 0.00189645%
+
+chunk_26
+tri count: 71
+tri percentage of original mesh: 0.00192354%
+
+chunk_27
+tri count: 102
+tri percentage of original mesh: 0.0027634%
+
+chunk_28
+tri count: 387
+tri percentage of original mesh: 0.0104847%
+
+chunk_29
+tri count: 1405
+tri percentage of original mesh: 0.0380645%
+
+chunk_30
+tri count: 194
+tri percentage of original mesh: 0.00525588%
+
+chunk_31
+tri count: 344
+tri percentage of original mesh: 0.0093197%
+
+chunk_32
+tri count: 606
+tri percentage of original mesh: 0.0164178%
+
+chunk_33
+tri count: 817
+tri percentage of original mesh: 0.0221343%
+
+chunk_34
+tri count: 126
+tri percentage of original mesh: 0.00341361%
+
+chunk_35
+tri count: 68
+tri percentage of original mesh: 0.00184227%
+
+chunk_36
+tri count: 85
+tri percentage of original mesh: 0.00230283%
+
+chunk_37
+tri count: 66
+tri percentage of original mesh: 0.00178808%
+
+chunk_38
+tri count: 53
+tri percentage of original mesh: 0.00143588%
+
+chunk_39
+tri count: 76
+tri percentage of original mesh: 0.002059%
+
+chunk_40
+tri count: 2012
+tri percentage of original mesh: 0.0545094%
+
+chunk_41
+tri count: 719
+tri percentage of original mesh: 0.0194793%
+
+chunk_42
+tri count: 2118
+tri percentage of original mesh: 0.0573812%
+
+chunk_43
+tri count: 3419
+tri percentage of original mesh: 0.0926281%
+
+chunk_44
+tri count: 1128
+tri percentage of original mesh: 0.0305599%
+
+chunk_45
+tri count: 2100
+tri percentage of original mesh: 0.0568935%
+
+chunk_46
+tri count: 432
+tri percentage of original mesh: 0.0117038%
+
+chunk_47
+tri count: 353
+tri percentage of original mesh: 0.00956353%
+
+chunk_48
+tri count: 6643
+tri percentage of original mesh: 0.179973%
+
+chunk_49
+tri count: 2365
+tri percentage of original mesh: 0.0640729%
+
+chunk_50
+tri count: 270
+tri percentage of original mesh: 0.00731488%
+
+chunk_51
+tri count: 240
+tri percentage of original mesh: 0.00650212%
+
+chunk_52
+tri count: 257
+tri percentage of original mesh: 0.00696268%
+
+chunk_53
+tri count: 211
+tri percentage of original mesh: 0.00571644%
+
+chunk_54
+tri count: 152
+tri percentage of original mesh: 0.00411801%
+
+chunk_55
+tri count: 184
+tri percentage of original mesh: 0.00498496%
+
+chunk_56
+tri count: 125
+tri percentage of original mesh: 0.00338652%
+

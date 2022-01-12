@@ -14,6 +14,7 @@ public:
 	float& operator[](int i);
 	V3 operator+(V3 v1);
 	V3 operator-(V3 v1);
+	friend bool operator== (const V3& a, const V3& b);
 	// cerr << v;
 	friend ostream& operator<<(ostream& ostr, V3 v);
 	friend istream& operator>>(istream& istr, V3 &v);

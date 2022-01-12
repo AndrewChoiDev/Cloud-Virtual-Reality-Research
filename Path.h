@@ -3,6 +3,7 @@
 #include "V3.h"
 #include "ppc.h"
 #include "TMesh.h"
+#include <vector>
 
 class Path {
 public:
@@ -25,5 +26,10 @@ public:
 	void Load(char *fname); // load path from text file
 	float GetTotalTime();
 	void Render(FrameBuffer* fb, PPC* ppc);
-	void accumulateVisTrisOnSegment(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh);
+	void accumulateVisTrisOnPath(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh);
+	void accumulateVisTrisOnSegment(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh, int nodeStart);
+	std::vector<TMesh> accumulateVisTrisOnConstantIntervals(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh, float tPeriod);
+	std::vector<TMesh> accumulateNewlyVisTrisOnConstantIntervals(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh, float tPeriod);
+	void accumulateVisTrisOnInterval(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh, int frameStart, int frameEnd);
+	std::vector<int> Path::pathIntervalCriticalFramePoints(float tPeriod, float fps);
 };

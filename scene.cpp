@@ -240,7 +240,7 @@ void Scene::RenderHW() {
 	glEnable(GL_DEPTH_TEST);
 
 	// clear buffers
-	glClearColor(0.0f, 0.0f, 0.5f, 1.0f);
+	glClearColor(0.01f, 0.01f, 0.01f, 1.0f);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	// set the view desired by the application (the user)
@@ -267,7 +267,7 @@ void Scene::RenderGPU() {
 	}
 
 	// clear the framebuffer
-	glClearColor(0.0, 0.0f, 0.5f, 1.0f);
+	glClearColor(1.0, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// per frame initialization
@@ -313,6 +313,8 @@ void Scene::Render(FrameBuffer *rfb, PPC *rppc) {
 
 	if (path)
 		path->Render(rfb, ppc);
+
+	streetLinesGraphSystem.SWRender(rfb, ppc);
 
 	rfb->redraw();
 
@@ -643,10 +645,12 @@ void Scene::EdgeVRSetup() {
 
 void Scene::PlaybackPath(float fps) {
 
-	float time = path->GetTotalTime();
+	
+	float time = this->streetLinesGraphSystem.path.GetTotalTime();
+	std::cerr << "INFO: Playback path thing, total time: " << time << endl;
 	PPC ppc0(*ppc);
 	for (int fi = 0; fi < (int)(time * fps); fi++) {
-		path->SetCamera(ppc, ppc, (float)fi / fps);
+		this->streetLinesGraphSystem.path.SetCamera(ppc, ppc, (float)fi / fps);
 		fb->Draw3DPoint(ppc->C, &ppc0, 0xFF00FF00, 7);
 		fb->redraw();
 		hwfb->redraw();
@@ -730,6 +734,157 @@ void Scene::PlaybackPathHWOffsets(float fps) {
 	tiltedHwfb->hide();
 }
 
+
+
+
+#include <sstream>
+void Scene::PlaybackPathChunks(float fps)
+{
+	auto fullMesh = tmeshes[12];
+
+	TMesh chunkMesh;
+
+	int currentInterval = -1;
+
+	auto criticalPoints = path->pathIntervalCriticalFramePoints(0.5f, 30.0f);
+
+	auto spectatorHwfb = new FrameBuffer(40, 40, hwfb->w, hwfb->h, 128);
+	spectatorHwfb->isHW = 1;
+	spectatorHwfb->show();
+	spectatorHwfb->label("Spectator Hardware Render");
+
+	float time = path->GetTotalTime();
+	PPC ppc0(*ppc);
+	for (int fi = 0; fi < (int)(time * fps); fi++) {
+		if (fi >= criticalPoints[currentInterval + 1]) {
+			currentInterval += 1;
+			std::stringstream ss;
+			ss << "mydbg/path_mesh_chunks/chunk_" << currentInterval;
+			chunkMesh.LoadBin((char*)(ss.str().c_str()));
+			tmeshes[12] = chunkMesh;
+		}
+
+		path->SetCamera(ppc, ppc, (float)fi / fps);
+
+		hwfb->redraw();
+		Fl::check();
+
+		*ppc = ppc0;
+		spectatorHwfb->redraw();
+		Fl::check();
+	}
+	spectatorHwfb->hide();
+
+	tmeshes[12] = fullMesh;
+	*ppc = ppc0;
+	hwfb->redraw();
+	Fl::check();
+}
+
+void Scene::PlaybackDeltaPathChunks(float fps)
+{
+	auto fullMesh = tmeshes[12];
+
+	TMesh accMesh = TMesh();
+	accMesh.Allocate(0, 0);
+	//tmeshes[12] = accMesh;
+
+	int currentInterval = -1;
+
+	auto criticalPoints = this->streetLinesGraphSystem.path.pathIntervalCriticalFramePoints(4.0f, 30.0f);
+
+	auto spectatorHwfb = new FrameBuffer(40, 40, hwfb->w, hwfb->h, 128);
+	spectatorHwfb->isHW = 1;
+	spectatorHwfb->show();
+	spectatorHwfb->label("Spectator Hardware Render");
+
+	float time = this->streetLinesGraphSystem.path.GetTotalTime();
+	PPC ppc0(*ppc);
+
+	auto deltaChunkTriCounts = std::vector<int>();
+
+
+	for (int fi = 0; fi < (int)(time * fps); fi++) {
+
+		auto enteredNewInterval = fi >= criticalPoints[currentInterval + 1];
+
+		if (enteredNewInterval) {
+			currentInterval += 1;
+			std::stringstream ss;
+			ss << "mydbg/path_mesh_chunks/chunk_" << currentInterval;
+
+			TMesh chunkMesh;
+			chunkMesh.LoadBin((char*)(ss.str().c_str()));
+			if (currentInterval == 0) {
+				accMesh = chunkMesh;
+			}
+			else {
+				accMesh.MergeIntoSelf(chunkMesh);
+			}
+			deltaChunkTriCounts.push_back(chunkMesh.trisN);
+			tmeshes[12] = accMesh;
+			tmeshes[12].SetVertexNormalsAndColorsBlackWhiteDirectional();
+		}
+
+		this->streetLinesGraphSystem.path.SetCamera(ppc, ppc, (float)fi / fps);
+
+		hwfb->redraw();
+		Fl::check();
+
+		*ppc = ppc0;
+		spectatorHwfb->redraw();
+		Fl::check();
+
+		if (enteredNewInterval) {
+			std::stringstream ss;
+			ss << "mydbg/path_mesh_chunks/img_chunk_" << currentInterval << ".tiff";
+			hwfb->SaveAsTiff((char*)(ss.str().c_str()));
+		}
+	}
+
+	ofstream reportFile;
+	reportFile.open("mydbg/path_mesh_chunks/report.txt");
+	reportFile << "REPORT FOR MESH CHUNKS ALONG PATH" << endl;
+	reportFile << "original mesh tri count: " << fullMesh.trisN << endl << endl;
+
+	for (auto i = 0; i < deltaChunkTriCounts.size(); i++)
+	{
+		auto triCount = deltaChunkTriCounts[i];
+		auto triRatio = ((float)triCount) / fullMesh.trisN;
+		auto triPercentage = triRatio * 100.0f;
+
+		reportFile << "chunk_" << i
+			<< "\ntri count: " << triCount
+			<< "\ntri percentage of original mesh: " << triPercentage << "%"
+			<< endl << endl;
+	}
+
+	reportFile.flush();
+	reportFile.close();
+	
+	{
+		std::stringstream ss;
+		ss << "mydbg/path_mesh_chunks/img_accumulated_mesh.tiff";
+		spectatorHwfb->SaveAsTiff((char*)(ss.str().c_str()));
+	}
+
+	spectatorHwfb->hide();
+
+	
+
+	tmeshes[12] = fullMesh;
+	tmeshes[12].SetVertexNormalsAndColorsBlackWhiteDirectional();
+	*ppc = ppc0;
+	hwfb->redraw();
+	Fl::check();
+
+	{
+		std::stringstream ss;
+		ss << "mydbg/path_mesh_chunks/img_original_mesh.tiff";
+		hwfb->SaveAsTiff((char*)(ss.str().c_str()));
+	}
+}
+
 void Scene::CollectVisibleTrianglesOnPath(float t0, float t1, float fps) {
 
 	float time = path->GetTotalTime();
@@ -749,14 +904,26 @@ void Scene::CollectVisibleTrianglesOnPath(float t0, float t1, float fps) {
 
 }
 
+#include <filesystem>
+#include <sstream>;
 
 void Scene::DBG() {
 
 	{
-		//PlaybackPath(30.0f);
-		path->accumulateVisTrisOnSegment(hwfb, ppc, 30.0f, &(tmeshes[12]));
-		return;
-		CollectVisibleTrianglesOnPath(0.0f, 2.0f, 30.0f);
+		auto tMeshChunks = this->streetLinesGraphSystem.path.
+			accumulateNewlyVisTrisOnConstantIntervals(hwfb, ppc, 30.0f, &(tmeshes[12]), 4.0f);
+			//accumulateVisTrisOnConstantIntervals(hwfb, ppc, 30.0f, &(tmeshes[12]), 4.0f);
+
+		for (auto& filePath : std::filesystem::directory_iterator("mydbg/path_mesh_chunks")) {
+			std::filesystem::remove_all(filePath);
+		}
+
+		for (int i = 0; i < tMeshChunks.size(); i++) {
+			std::stringstream ss;
+			ss << "mydbg/path_mesh_chunks/chunk_" << i;
+			tMeshChunks[i].SaveBinXYZAndColorOnly((char*)(ss.str().c_str()));
+		}
+
 		return;
 	}
 

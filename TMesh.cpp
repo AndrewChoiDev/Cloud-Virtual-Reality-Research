@@ -132,6 +132,9 @@ void TMesh::DrawWireFrame(FrameBuffer* fb, PPC* ppc, unsigned int color) {
 
 }
 
+// format: vertex count, position?, cols?, normals?, texture_coords?, 
+// verts, cols, normals, texture_coords,
+// tri_count, triangles
 void TMesh::LoadBin(char* fname) {
 
 	ifstream ifs(fname, ios::binary);
@@ -180,16 +183,7 @@ void TMesh::LoadBin(char* fname) {
 	ifs.read((char*)verts, vertsN * 3 * sizeof(float)); // load verts
 
 	if (colors) {
-#if 0
-		float* colBuffer = new float[vertsN * 4];
-		ifs.read((char*)colBuffer, vertsN * 4 * sizeof(float)); // load cols
-		for (int vi = 0; vi < vertsN; vi++)
-			colors[vi] = V3(colBuffer[vi * 4 + 0], colBuffer[vi * 4 + 1],
-				colBuffer[vi * 4 + 2]);
-		delete[] colBuffer;
-#else
 		ifs.read((char*)colors, vertsN * 3 * sizeof(float)); // load cols
-#endif
 	}
 
 	if (normals)
@@ -198,7 +192,7 @@ void TMesh::LoadBin(char* fname) {
 	if (tcs)
 		ifs.read((char*)tcs, vertsN * 2 * sizeof(float)); // load texture coordinates
 
-	ifs.read((char*)&trisN, sizeof(int));
+	ifs.read((char*)&trisN, sizeof(int)); // read triangle count
 	if (tris)
 		delete tris;
 	tris = new unsigned int[trisN * 3];
@@ -250,7 +244,7 @@ void TMesh::Rotate(V3 aO, V3 aDir, float theta) {
 }
 
 void TMesh::RenderFilled(FrameBuffer* fb, PPC* ppc, V3 C, V3 L, float ka) {
-
+	//return;
 	V3* pverts = new V3[vertsN];
 	for (int vi = 0; vi < vertsN; vi++) {
 		if (!ppc->Project(verts[vi], pverts[vi]))
@@ -611,11 +605,13 @@ void TMesh::RenderHW() {
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
+	if (colors)
+		glEnableClientState(GL_COLOR_ARRAY);
 	if (normals)
 		glEnableClientState(GL_NORMAL_ARRAY);
 	glVertexPointer(3, GL_FLOAT, 0, (float*)verts);
-	glColorPointer(3, GL_FLOAT, 0, (float*)colors);
+	if (colors)
+		glColorPointer(3, GL_FLOAT, 0, (float*)colors);
 	// maybe use this for glColorPointer(3, GL_UNSIGNED_)
 	if (normals)
 		glNormalPointer(GL_FLOAT, 0, (float*)normals);
@@ -623,7 +619,8 @@ void TMesh::RenderHW() {
 	glDrawElements(GL_TRIANGLES, 3 * trisN, GL_UNSIGNED_INT, tris);
 	if (normals)
 		glDisableClientState(GL_NORMAL_ARRAY);
-	glDisableClientState(GL_COLOR_ARRAY);
+	if (colors)
+		glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
 
 	// if the TMesh was textured
@@ -1009,4 +1006,145 @@ TMesh TMesh::constructVisibleMesh()
 	return visibleMesh;
 }
 
+// format: vertex count, position?, cols?, normals?, texture_coords?, 
+// verts, cols, normals, texture_coords,
+// tri_count, triangles
+void TMesh::SaveBinXYZAndColorOnly(char* fname)
+{
+	std::ofstream ofs(fname, ios::binary);
+	if (ofs.fail()) {
+		cerr << "INFO: cannot open file: " << fname << endl;
+		return;
+	}
 
+	ofs.write((char*)&(this->vertsN), sizeof(int)); // vertex count
+	char* positionAndColorOnly = "yynn";
+	ofs.write(positionAndColorOnly, 4); // vertex attribute yes-no header
+	ofs.write((char*)(this->verts), sizeof(float) * 3 * this->vertsN); // vertex array
+	
+	ofs.write((char*)(this->colors), sizeof(float) * 3 * this->vertsN); // color array
+
+	ofs.write((char*)&(this->trisN), sizeof(int)); // tri count
+	ofs.write((char*)(this->tris), sizeof(unsigned int) * trisN * 3); // triangle indices array
+
+	ofs.close();
+}
+
+// currently ignores textures and visTris and normals
+void TMesh::MergeIntoSelf(TMesh mesh)
+{
+	auto mergeVertsN = this->vertsN + mesh.vertsN;
+	auto mergeTrisN = this->trisN + mesh.trisN;
+
+	auto mergedVertices = new V3[mergeVertsN];
+	auto mergedVertColors = new V3[mergeVertsN];
+	auto mergedTris = new unsigned int[mergeTrisN * 3];
+
+	// copies verts from "this" then the other mesh
+	for (int i = 0; i < this->vertsN; i++) {
+		mergedVertices[i] = this->verts[i];
+		mergedVertColors[i] = this->colors[i];
+	}
+	for (int i = 0; i < mesh.vertsN; i++) {
+		mergedVertices[i + this->vertsN] = mesh.verts[i];
+		mergedVertColors[i + this->vertsN] = mesh.colors[i];
+	}
+
+	// copies tri indices from both meshes
+	for (int i = 0; i < this->trisN * 3; i++) {
+		mergedTris[i] = this->tris[i];
+	}
+	// have to add offset this->trisN * 3 to preserve mapping
+	for (int i = 0; i < mesh.trisN * 3; i++) {
+		mergedTris[i + this->trisN * 3] = mesh.tris[i] + this->trisN * 3;
+	}
+
+	this->vertsN = mergeVertsN;
+	this->trisN = mergeTrisN;
+	this->verts = mergedVertices;
+	this->colors = mergedVertColors;
+	this->tris = mergedTris;
+}
+
+unsigned char* TMesh::visTrisCopy()
+{
+	auto copyVisTris = new unsigned char[trisN];
+
+	for (int i = 0; i < trisN; i++) {
+		copyVisTris[i] = this->visTris[i];
+	}
+
+	return copyVisTris;
+}
+
+void TMesh::removeVisTris(unsigned char* removalVisTris)
+{
+	for (int i = 0; i < trisN; i++) {
+		if (removalVisTris[i] == VISIBLE_TRI) {
+			this->visTris[i] = INVISIBLE_TRI;
+		}
+	}
+}
+
+void TMesh::setVisTris(unsigned char* visTris)
+{
+	this->visTris = visTris;
+}
+
+void TMesh::SetAverageVertexNormals() {
+
+	if (!normals)
+		normals = new V3[vertsN];
+	int* binsN = new int[vertsN];
+	for (int vi = 0; vi < vertsN; vi++) {
+		binsN[vi] = 0;
+		normals[vi] = V3(0.0f, 0.0f, 0.0f);
+	}
+	for (int tri = 0; tri < trisN; tri++) {
+		int i0 = tris[3 * tri + 0];
+		int i1 = tris[3 * tri + 1];
+		int i2 = tris[3 * tri + 2];
+		V3 n = ((verts[i1] - verts[i0]) ^ (verts[i2] - verts[i0])).Normalized();
+		n = n * -1.0f;
+		normals[i0] = normals[i0] + n;
+		binsN[i0]++;
+		normals[i1] = normals[i1] + n;
+		binsN[i1]++;
+		normals[i2] = normals[i2] + n;
+		binsN[i2]++;
+	}
+	for (int vi = 0; vi < vertsN; vi++) {
+		normals[vi] = normals[vi] / (float)binsN[vi];
+		normals[vi] = normals[vi].Normalized();
+	}
+
+}
+
+
+void TMesh::SetVertexNormalsAndColorsBlackWhiteDirectional()
+{
+	V3 lv(-0.294903f, 0.3637f, 0.883599f);
+
+	float ka = 0.25f;
+
+	for (int vi = 0; vi < vertsN; vi++) {
+		colors[vi] = V3(1.0f, 1.0f, 1.0f);
+	}
+
+	SetAverageVertexNormals();
+
+	DirectionalLight(lv, ka);
+}
+
+void TMesh::DirectionalLight(V3 lv, float ka) {
+
+	auto ocolors = new V3[vertsN];
+	for (int vi = 0; vi < vertsN; vi++)
+		ocolors[vi] = colors[vi];
+
+	for (int vi = 0; vi < vertsN; vi++) {
+		V3 nv = normals[vi].Normalized();
+		float kd = lv * nv; kd = (kd < 0.0f) ? 0.0f : kd;
+		colors[vi] = ocolors[vi] * (ka + (1 - ka) * kd);
+	}
+}

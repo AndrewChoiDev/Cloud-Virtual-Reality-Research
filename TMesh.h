@@ -83,4 +83,12 @@ public:
 	void setVisibleTrianglesHWFrameBuffer(FrameBuffer* hwfb);
 	void addVisibleTrianglesHWFrameBuffer(FrameBuffer* hwfb);
 	TMesh constructVisibleMesh();
+	void SaveBinXYZAndColorOnly(char* fname);
+	void MergeIntoSelf(TMesh mesh);
+	unsigned char* visTrisCopy();
+	void removeVisTris(unsigned char* removalVisTris);
+	void setVisTris(unsigned char* visTris);
+	void SetAverageVertexNormals();
+	void DirectionalLight(V3 lv, float ka);
+	void SetVertexNormalsAndColorsBlackWhiteDirectional();
 };

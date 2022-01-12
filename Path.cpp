@@ -149,14 +149,37 @@ void Path::Render(FrameBuffer* fb, PPC* ppc) {
 
 }
 
-void Path::accumulateVisTrisOnSegment(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh)
-{
 
+void Path::accumulateVisTrisOnPath(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh)
+{
 	tMesh->ClearVisibleTriangles();
 
-	float time = this->GetTotalTime();
+	for (int i = 0; i < this->nodesN - 1; i++) {
+		accumulateVisTrisOnSegment(hwfb, ppc, fps, tMesh, i);
+	}
+}
+
+void Path::accumulateVisTrisOnSegment(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh, int nodeStart)
+{
+	// node start can not be larger than the second-to-last node
+	if (nodeStart > this->nodesN - 2 || this->nodesN < 2 || nodeStart < 0) {
+		cerr << "ERROR: nodeStart or nodesN size invalid" << endl;
+		return;
+	}
+
+	// use accumulation of node lengths to find the frame to start rendering and the frame to stop
+	auto timeStart = 0.0f;
+	for (int i = 0; i < nodeStart; i++) {
+		timeStart += (nodes[i + 1] - nodes[i]).Length() / speed;
+	}
+	auto timeEnd = timeStart + (nodes[nodeStart + 1] - nodes[nodeStart]).Length() / speed;
+
+	auto frameStart = (int)(timeStart * fps);
+	auto frameEnd = (int)(timeEnd * fps);
+
+	// rendering and triangle accumulation
 	PPC ppc0(*ppc);
-	for (int fi = 0; fi < (int)(time * fps); fi++) {
+	for (int fi = frameStart; fi < frameEnd; fi++) {
 		this->SetCamera(ppc, ppc, (float)fi / fps);
 		hwfb->redraw();
 		Fl::check();
@@ -165,5 +188,84 @@ void Path::accumulateVisTrisOnSegment(FrameBuffer* hwfb, PPC* ppc, float fps, TM
 	*ppc = ppc0;
 	hwfb->redraw();
 	Fl::check();
+}
 
+void Path::accumulateVisTrisOnInterval(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh, int frameStart, int frameEnd)
+{
+	PPC ppc0(*ppc);
+	for (int fi = frameStart; fi < frameEnd; fi++) {
+		this->SetCamera(ppc, ppc, (float)fi / fps);
+		hwfb->redraw();
+		Fl::check();
+		tMesh->addVisibleTrianglesHWFrameBuffer(hwfb);
+	}
+	*ppc = ppc0;
+}
+
+
+
+// frame points that may be the start or end of an interval
+std::vector<int> Path::pathIntervalCriticalFramePoints(float tPeriod, float fps)
+{
+	auto totalTime = this->GetTotalTime();
+	auto intervalCount = (int)ceil(totalTime / tPeriod);
+
+	auto criticalPoints = std::vector<int>();
+
+	for (int ci = 0; ci < intervalCount; ci++) {
+		criticalPoints.push_back((int)((float)ci * tPeriod * fps));
+	}
+	criticalPoints.push_back((int)(totalTime * fps));
+	return criticalPoints;
+}
+
+#include <vector>
+
+std::vector<TMesh> Path::accumulateVisTrisOnConstantIntervals(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh, float tPeriod)
+{
+	auto totalTime = this->GetTotalTime();
+	auto intervalCount = (int)ceil(totalTime / tPeriod);
+
+	auto criticalPoints = pathIntervalCriticalFramePoints(tPeriod, fps);
+
+	auto tMeshChunks = std::vector<TMesh>();
+
+	// iteration for each interval
+	for (int i = 0; i < intervalCount; i++) {
+		tMesh->ClearVisibleTriangles();
+		accumulateVisTrisOnInterval(hwfb, ppc, fps, tMesh, criticalPoints[i], criticalPoints[i + 1]);
+		tMeshChunks.push_back(tMesh->constructVisibleMesh());
+	}
+	tMesh->ClearVisibleTriangles();
+
+	return tMeshChunks;
+}
+
+std::vector<TMesh> Path::accumulateNewlyVisTrisOnConstantIntervals(FrameBuffer* hwfb, PPC* ppc, float fps, TMesh* tMesh, float tPeriod)
+{
+	auto totalTime = this->GetTotalTime();
+	auto intervalCount = (int)ceil(totalTime / tPeriod);
+
+	auto criticalPoints = pathIntervalCriticalFramePoints(tPeriod, fps);
+
+	auto tMeshChunks = std::vector<TMesh>();
+
+	tMesh->ClearVisibleTriangles();
+
+	// iteration for each interval
+	for (int i = 0; i < intervalCount; i++) {
+		auto visTrisBeforeAcc = tMesh->visTrisCopy();
+
+		accumulateVisTrisOnInterval(hwfb, ppc, fps, tMesh, criticalPoints[i], criticalPoints[i + 1]);
+		auto visTrisAfterAcc = tMesh->visTrisCopy();
+		
+		
+		// vistris that have been marked visible already must be deleted
+		tMesh->removeVisTris(visTrisBeforeAcc);
+		tMeshChunks.push_back(tMesh->constructVisibleMesh());
+		tMesh->setVisTris(visTrisAfterAcc);
+	}
+	tMesh->ClearVisibleTriangles();
+
+	return tMeshChunks;
 }

@@ -226,7 +226,7 @@ void PPC::SetIntrinsicsHW() {
 	glLoadIdentity();
 	float f = GetF();
 	float hither = 0.25f;
-	float yon = 10000.0f;
+	float yon = 100000.0f;
 	float scalef = hither / f;
 	float wf = a.Length() * w;
 	float hf = b.Length() * h;

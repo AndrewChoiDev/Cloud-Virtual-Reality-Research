@@ -7,6 +7,7 @@
 #include "CGInterface.h"
 #include "RandomCamera.h"
 #include "Path.h"
+#include "StreetLinesGraphSystem.h"
 
 class Scene {
 public:
@@ -84,6 +85,11 @@ public:
 	void CollectVisibleTrianglesOnPath(float t0, float t1, float fps);
 	void PlaybackPathHWSideBySide(float fps);
 	void PlaybackPathHWOffsets(float fps);
+	void PlaybackPathChunks(float fps);
+
+	void PlaybackDeltaPathChunks(float fps);
+	
+	StreetLinesGraphSystem streetLinesGraphSystem;
 };
 
 extern Scene *scene;
