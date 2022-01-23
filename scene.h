@@ -12,22 +12,22 @@
 class Scene {
 public:
 
-	CGInterface * cgi;
-	ShaderOneInterface *soi;
-
 	GUI *gui;
 	FrameBuffer *fb, *fb3, *hwfb, *gpufb;
-	PPC *ppc, *ppc3;
+	PPC *ppc;
 	TMesh *tmeshes;
 	int tmeshesN;
 	int renderHW;
+
+	bool isSkyboxInit = false;
+	V3 nearRegionCenter;
+
 	Scene();
 	void DBG();
 	void NewButton();
 	void Render();
 	void Render(FrameBuffer *rfb, PPC *rppc); // projection followed by rasterization
 	void RenderHW();
-	void RenderGPU();
 	void RenderRayTracing(FrameBuffer *rfb, PPC *rppc); // ray tracing
 	int RayTrace(V3 rO, V3 rdir, int rayOrder, V3& rc, float &currz);
 	float vf; // ppc visualization focal length
@@ -38,8 +38,6 @@ public:
 	void Render(RandomCamera *rc, FrameBuffer *rcfb);
 	void RCSetup();
 	float morphFraction; // morphing parameters
-	void PerSessionHWInit();
-	int hwPerSessionInit;
 
 	GLuint hwtex;
 	void SetupSM();

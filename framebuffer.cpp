@@ -53,21 +53,7 @@ void FrameBuffer::draw() {
 		return;
 	}
 
-	scene->PerSessionHWInit();
-	
-	// for HW and GPU framebuffers
-	if (isHW == 1) {
-		scene->RenderHW();
-		if (scene->smSetup) {
-			scene->SetupSM();
-		}
-	}
-	else {
-		scene->RenderGPU();
-	}
-
-	glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pix);
-	cerr << "pixels read!" << endl;
+	return;
 
 }
 
@@ -104,16 +90,8 @@ int FrameBuffer::handle(int event) {
 		V3 rayDir;
 		rayDir = scene->ppc->c + scene->ppc->a*(float)u + scene->ppc->b*(float)v;
 		rayDir = rayDir.Normalized();
-		V3 pP(.5f+(float)u, .5f+(float)v, GetZ(u, v));
-		V3 P = scene->ppc->UnProject(pP);
-#if 0
-		cerr << u << " " << v << ", RGB: " << cv[0] << " " <<
-			cv[1] << " " << cv[2] << ", ray: " << rayDir[0] << " "
-			<< rayDir[1] << " " << rayDir[2] << "\r";
-#endif
-		cerr << u << " " << v << ", RGB: " << cv[0] << " " <<
-			cv[1] << " " << cv[2] << ", 3D point: " << P[0] << " "
-			<< P[1] << " " << P[2] << "\r";
+		//V3 pP(.5f+(float)u, .5f+(float)v, GetZ(u, v));
+		//V3 P = scene->ppc->UnProject(pP);
 		return 0;
 	}
 	default:

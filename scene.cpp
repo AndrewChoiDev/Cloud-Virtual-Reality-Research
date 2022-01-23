@@ -11,6 +11,7 @@
 #include "RandomCamera.h"
 
 #include "Path.h"
+#include "Skybox.h"
 
 Scene *scene;
 
@@ -18,14 +19,13 @@ using namespace std;
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 Scene::Scene() {
 
-	renderHW = 0;
-	cgi = 0;
-	soi = 0;
+	glewInit();
 
-	hwPerSessionInit = 0;
+	renderHW = 1;
 
 	gui = new GUI();
 	gui->show();
@@ -35,22 +35,16 @@ Scene::Scene() {
 	int h = 480;
 	int w = 640;
 
-	fb = new FrameBuffer(u0, v0, w, h, 0);
-	fb->label("SW 1");
-	fb->show();
-	fb->redraw();
-
-	fb3 = new FrameBuffer(u0+w+30, v0, w, h, 0);
-	fb3->label("SW 3");
-//	fb3->show();
-	fb3->redraw();
+	//fb = new FrameBuffer(u0, v0, w, h, 0);
+	//fb->label("SW 1");
+	//fb->show();
+	//fb->redraw();
 
 
 	gui->uiw->position(u0, v0 + h + 50);
 
 	float hfov = 55.0f;
-	ppc = new PPC(hfov, fb->w, fb->h);
-	ppc3 = new PPC(hfov, fb3->w, fb3->h);
+	ppc = new PPC(hfov, w, h);
 
 	tmeshesN = 13;
 	tmeshes = new TMesh[tmeshesN];
@@ -124,8 +118,6 @@ Scene::Scene() {
 	tmeshes[6].texture->SetChecker(0xFFFFFFFF, 0xFF000000, 8);
 	tmeshes[6].Scale(2.0f);
 
-//	ppc->SetPose(ppc->C + V3(0.0f, 50.0f, 0.0f), tmeshes[1].GetCenter(), V3(0.0f, 1.0f, 0.0f));
-	ppc3->SetPose(V3(0.0f, 40.0f, 50.0f), tmeshes[2].GetCenter(), V3(0.0f, 1.0f, 0.0f));
 
 	tmeshes[3].onFlag = 0;
 	tmeshes[4].onFlag = 0;
@@ -168,13 +160,13 @@ Scene::Scene() {
 	L = V3(ppc->C);
 	ka = 0.2f;
 
-	Render();
-
 	hwfb = new FrameBuffer(u0 + w + 30, v0, w, h, 0);
 	hwfb->label("HW fb");
 	hwfb->isHW = 1;
 	hwfb->show();
-	hwfb->redraw();
+
+	//glewInit();
+	//hwfb->redraw();
 
 	gpufb = new FrameBuffer(u0 + w + 30, v0 + h + 50, w, h, 0);
 	gpufb->label("GPU Framebuffer");
@@ -184,53 +176,36 @@ Scene::Scene() {
 
 	smSetup = 0;
 	EdgeVRSetup();
-	return;
-
-	SetupTeapot();
-
-	return;
-
-	hfov = 95.0f;
-	ppc = new PPC(hfov, fb->w, fb->h);
-	eri = new FrameBuffer(20 + 20 + fb->w, 100, 10, 10, 0);
-	eri->LoadTiff("mydbg/ERPanorama.tiff");
-//	eri->LoadTiff("mydbg/snowERPanorama.tif");
-	//	eri->LoadTiff("mydbg/louvreERPanorama.tif");
-	eri->label("Equirectangular panorama");
-	cerr << eri->w << " " << eri->h << endl;
-	eri->show();
-	ppc->SetPose(ppc->C, ppc->C + V3(0.9434f, -0.3212f, 0.0823f), V3(0.0f, 1.0f, 0.0f));
-	dsc = V3(34.8271f, -4.0f, 2.06099f);
-	dsr = 1.0f;
-	ResampleERI(eri, fb, ppc);
-
-	TrackImageSetup();
-
 }
+
+
 
 void Scene::Render() {
 
-	Render(fb, ppc);
+	if (!isSkyboxInit && renderHW) {
+		float nearRegionRadius = 150.0f;
+
+		auto nearMesh = tmeshes[12].constructNearMesh(ppc->C, nearRegionRadius);
+		auto farMesh = tmeshes[12].constructFarMesh(ppc->C, nearRegionRadius);
+
+		auto completeMesh = tmeshes[12];
+		tmeshes[12] = farMesh;
+
+		Skybox::renderAndSaveImages(this->ppc);
+
+		tmeshes[12] = completeMesh;
+
+		isSkyboxInit = true;
+
+		//ppc->SetPose(ppc->C, V3(0.0f, 0.0f, -1.0f), V3(0.0f, 1.0f, 0.0f));
+	}
+
+	//Render(fb, ppc);
+
+	//std::cerr << glGetString(GL_VERSION) << "\n";
+	
 	if (renderHW)
 		hwfb->redraw();
-	return;
-
-
-//	fb->Draw3DPoint(L, ppc, 0xFF00FFFF, 7);
-	return;
-
-	fb3->ClearZB();
-	fb3->SetBGR(0xFFFFFFFF);
-	ppc->Visualize(fb3, ppc3, fb);
-	fb3->redraw();
-	return;
-
-	Render(fb3, ppc3);
-
-	ppc->Visualize(fb3, ppc3, vf);
-	ppc->Visualize(fb3, ppc3, vf, fb);
-	fb3->redraw();
-
 }
 
 
@@ -247,6 +222,8 @@ void Scene::RenderHW() {
 	ppc->SetIntrinsicsHW();
 	ppc->SetExtrinsicsHW();
 
+	Skybox::renderFaces(ppc->C);
+
 	// draw the actual geometry
 	for (int tmi = 0; tmi < tmeshesN; tmi++) {
 		if (!tmeshes[tmi].onFlag)
@@ -255,41 +232,6 @@ void Scene::RenderHW() {
 	}
 
 }
-
-void Scene::RenderGPU() {
-
-	// if the first time, call per session initialization
-	if (cgi == NULL) {
-		cgi = new CGInterface();
-		cgi->PerSessionInit();
-		soi = new ShaderOneInterface();
-		soi->PerSessionInit(cgi);
-	}
-
-	// clear the framebuffer
-	glClearColor(1.0, 1.0f, 1.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// per frame initialization
-	cgi->EnableProfiles();
-	soi->PerFrameInit();
-	soi->BindPrograms();
-
-	// render geometry
-	for (int tmi = 0; tmi < tmeshesN; tmi++) {
-		if (!tmeshes[tmi].onFlag)
-			continue;
-		tmeshes[tmi].RenderHW();
-	}
-
-	soi->PerFrameDisable();
-	cgi->DisableProfiles();
-
-
-
-}
-
-
 
 
 void Scene::Render(FrameBuffer *rfb, PPC *rppc) {
@@ -625,24 +567,19 @@ void Scene::EdgeVRSetup() {
 
 	tmeshes[12].onFlag = 1;
 //	tmeshes[12].msiFlag = 0;
-	AABB aabb;
-	tmeshes[12].SetAABB(aabb);
-	V3 cityCenter = tmeshes[12].GetCenter();
-	float cityDiagonal = aabb.GetDiagonal();
-	ppc->SetPose(cityCenter + V3(-cityDiagonal / 5.0f, cityDiagonal/5.0f, 0.0f), cityCenter,
-		V3(0.0f, 1.0f, 0.0f));
+
 	ppc->Load("mydbg/view.txt");
-	fb->tstep = cityDiagonal / 1000.0f;
-	fb->rstep = 3.0f;
+
+	
+	nearRegionCenter = ppc->C;
+	//fb->tstep = cityDiagonal / 1000.0f;
+	//fb->rstep = 3.0f;
 	hwfb->show();
-	renderHW = 1;
-	Render();
+
 	path = new Path;
 	path->speed = 50.0f;
 	path->upGuidance = V3(0.0f, 1.0f, 0.0f);
 	path->height = 2.5f;
-
-	tmeshes[12] = tmeshes[12].constructNearMesh(ppc->C, 500.0f);
 }
 
 void Scene::PlaybackPath(float fps) {
@@ -739,7 +676,7 @@ void Scene::PlaybackPathHWOffsets(float fps) {
 
 
 
-#include <sstream>
+
 void Scene::PlaybackPathChunks(float fps)
 {
 	auto fullMesh = tmeshes[12];
@@ -1145,7 +1082,6 @@ void Scene::DBG() {
 		V3 tcenter = tmeshes[1].GetCenter();
 		V3 newC = V3(20.0f, 50.0f, -30.0f);
 		ppc->SetPose(newC, tcenter, V3(0.0f, 1.0f, 0.0f));
-		ppc3->SetPose(V3(0.0f, 50.0f, 100.0f), tcenter, V3(0.0f, 1.0f, 0.0f));
 		for (int i = 0; i < 200; i++) {
 			Render();
 			vf += 1.0f;
@@ -1566,59 +1502,6 @@ void Scene::RCSetup() {
 
 }
 
-void Scene::PerSessionHWInit() {
-
-	if (hwPerSessionInit)
-		return;
-
-	glewInit();
-	GLuint texs[3];
-	glGenTextures(3, texs);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texs[0]);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	FrameBuffer *tex = new FrameBuffer(0, 0, 64, 64, 0);
-	tex->SetChecker(0xFF000000, 0xFFFFFFFF, 8);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
-		tex->w, tex->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->pix);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texs[1]);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	FrameBuffer *tex2 = new FrameBuffer(0, 0, 64, 64, 0);
-	tex2->SetChecker(0xFF0000FF, 0xFFFFFFFF, 8);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-		tex2->w, tex2->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex2->pix);
-
-
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, texs[2]);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	FrameBuffer *tex3 = new FrameBuffer(0, 0, 64, 64, 0);
-	tex3->LoadTiff("mydbg/sm.tif");
-//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-//		tex3->w, tex3->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex3->pix);
-
-	ifstream zb("mydbg/smzb");
-	zb.read((char*)tex3->zb, sizeof(float)*tex3->w*tex3->h);
-	zb.close();
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
-		tex3->w, tex3->h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, tex3->zb);
-
-	hwPerSessionInit = 1;
-
-}
 
 void Scene::SetupSM() {
 
